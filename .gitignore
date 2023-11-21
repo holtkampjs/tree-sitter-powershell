@@ -1,0 +1,8 @@
+# Ignore node_modules
+node_modules/
+
+# Ignore generated files
+binding.gyp
+bindings/
+src/parser.c
+src/tree_sitter/parser.h
