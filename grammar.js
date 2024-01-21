@@ -14,7 +14,7 @@ module.exports = grammar({
     _token: $ => choice(
       $.keyword,
       $.variable,
-      // command
+      $.command,
       // command-parameter
       // command-argument-token
       // integer-literal
@@ -62,47 +62,6 @@ module.exports = grammar({
       $.workflow,
     ),
 
-    variable: $ => choice(
-      seq(
-        '$',
-        choice(
-          '$',
-          '?',
-          '^',
-          seq(
-            optional($._variable_scope),
-            $.identifier
-          ),
-          seq(
-            '{',
-            optional($._variable_scope),
-            $.identifier,
-            '}'
-          ),
-        ),
-      ),
-      seq(
-        '@',
-        optional($._variable_scope),
-        $.identifier
-      ),
-    ),
-
-    identifier: _ => /[A-Za-z0-9_\?]+/,
-    braced_identifier: _ => /[^\}`]+/,
-
-    _variable_scope: $ => seq($.scope, ':'),
-
-    scope: _ => choice(
-      'global',
-      'local',
-      'private',
-      'script',
-      'using',
-      'workflow',
-      /[A-Za-z0-9_\?]+/,
-    ),
-
     begin: _ => 'begin',
     break: _ => 'break',
     catch: _ => 'catch',
@@ -139,6 +98,65 @@ module.exports = grammar({
     while: _ => 'while',
     workflow: _ => 'workflow',
 
+    variable: $ => choice(
+      seq(
+        '$',
+        choice(
+          '$',
+          '?',
+          '^',
+          seq(
+            optional($._variable_scope),
+            $.identifier
+          ),
+          seq(
+            '{',
+            optional($._variable_scope),
+            $.identifier,
+            '}'
+          ),
+        ),
+      ),
+      seq(
+        '@',
+        optional($._variable_scope),
+        $.identifier
+      ),
+    ),
+
+    // Valid characters to match variable names
+    identifier: _ => /[A-Za-z0-9_\?]+/,
+
+    // Valid characters for braced variable names
+    braced_identifier: _ => /[^\}`]+/,
+
+    _variable_scope: $ => seq($.scope, ':'),
+
+    scope: _ => choice(
+      'global',
+      'local',
+      'private',
+      'script',
+      'using',
+      'workflow',
+      /[A-Za-z0-9_\?]+/,
+    ),
+
+    // TODO: Implement tests
+    command: $ => $._generic_token,
+    _generic_token: $ => repeat1($._generic_token_part),
+    _generic_token_part: $ => choice(
+      // TODO: expandable-string-literal
+      // TODO: verbatim-here-string-literal
+      $.variable,
+      /[^\{\}\(\)\;\,\|\&\$\`\"\']/,
+    ),
+    _generic_token_with_subexpr_start: $ => seq(
+      repeat1($._generic_token_part),
+      '$(',
+    ),
+
+    // TODO: Implement tests
     comment: _ => token(choice(
       seq('#', /.*/),
       seq(
