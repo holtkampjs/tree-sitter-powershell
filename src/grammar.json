@@ -2,14 +2,519 @@
   "name": "powershell",
   "rules": {
     "source_file": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_token"
+        }
+      ]
+    },
+    "_token": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "keyword"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "variable"
+        }
+      ]
+    },
+    "keyword": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "begin"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "break"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "catch"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "class"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "continue"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "data"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "define"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "do"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "dynamicparam"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "else"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "elseif"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "end"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "exit"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "filter"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "finally"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "for"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "foreach"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "from"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "function"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "if"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "in"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "inlinescript"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "parallel"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "param"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "process"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "return"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "switch"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "throw"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "trap"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "try"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "until"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "using"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "var"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "while"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "workflow"
+        }
+      ]
+    },
+    "variable": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "$"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "$"
+                },
+                {
+                  "type": "STRING",
+                  "value": "?"
+                },
+                {
+                  "type": "STRING",
+                  "value": "^"
+                },
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "SYMBOL",
+                          "name": "_variable_scope"
+                        },
+                        {
+                          "type": "BLANK"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "identifier"
+                    }
+                  ]
+                },
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "STRING",
+                      "value": "{"
+                    },
+                    {
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "SYMBOL",
+                          "name": "_variable_scope"
+                        },
+                        {
+                          "type": "BLANK"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "identifier"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "@"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_variable_scope"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          ]
+        }
+      ]
+    },
+    "identifier": {
+      "type": "PATTERN",
+      "value": "[A-Za-z0-9_\\?]+"
+    },
+    "braced_identifier": {
+      "type": "PATTERN",
+      "value": "[^\\}`]+"
+    },
+    "_variable_scope": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "scope"
+        },
+        {
+          "type": "STRING",
+          "value": ":"
+        }
+      ]
+    },
+    "scope": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "global"
+        },
+        {
+          "type": "STRING",
+          "value": "local"
+        },
+        {
+          "type": "STRING",
+          "value": "private"
+        },
+        {
+          "type": "STRING",
+          "value": "script"
+        },
+        {
+          "type": "STRING",
+          "value": "using"
+        },
+        {
+          "type": "STRING",
+          "value": "workflow"
+        },
+        {
+          "type": "PATTERN",
+          "value": "[A-Za-z0-9_\\?]+"
+        }
+      ]
+    },
+    "begin": {
       "type": "STRING",
-      "value": "hello"
+      "value": "begin"
+    },
+    "break": {
+      "type": "STRING",
+      "value": "break"
+    },
+    "catch": {
+      "type": "STRING",
+      "value": "catch"
+    },
+    "class": {
+      "type": "STRING",
+      "value": "class"
+    },
+    "continue": {
+      "type": "STRING",
+      "value": "continue"
+    },
+    "data": {
+      "type": "STRING",
+      "value": "data"
+    },
+    "define": {
+      "type": "STRING",
+      "value": "define"
+    },
+    "do": {
+      "type": "STRING",
+      "value": "do"
+    },
+    "dynamicparam": {
+      "type": "STRING",
+      "value": "dynamicparam"
+    },
+    "else": {
+      "type": "STRING",
+      "value": "else"
+    },
+    "elseif": {
+      "type": "STRING",
+      "value": "elseif"
+    },
+    "end": {
+      "type": "STRING",
+      "value": "end"
+    },
+    "exit": {
+      "type": "STRING",
+      "value": "exit"
+    },
+    "filter": {
+      "type": "STRING",
+      "value": "filter"
+    },
+    "finally": {
+      "type": "STRING",
+      "value": "finally"
+    },
+    "for": {
+      "type": "STRING",
+      "value": "for"
+    },
+    "foreach": {
+      "type": "STRING",
+      "value": "foreach"
+    },
+    "from": {
+      "type": "STRING",
+      "value": "from"
+    },
+    "function": {
+      "type": "STRING",
+      "value": "function"
+    },
+    "if": {
+      "type": "STRING",
+      "value": "if"
+    },
+    "in": {
+      "type": "STRING",
+      "value": "in"
+    },
+    "inlinescript": {
+      "type": "STRING",
+      "value": "inlinescript"
+    },
+    "parallel": {
+      "type": "STRING",
+      "value": "parallel"
+    },
+    "param": {
+      "type": "STRING",
+      "value": "param"
+    },
+    "process": {
+      "type": "STRING",
+      "value": "process"
+    },
+    "return": {
+      "type": "STRING",
+      "value": "return"
+    },
+    "switch": {
+      "type": "STRING",
+      "value": "switch"
+    },
+    "throw": {
+      "type": "STRING",
+      "value": "throw"
+    },
+    "trap": {
+      "type": "STRING",
+      "value": "trap"
+    },
+    "try": {
+      "type": "STRING",
+      "value": "try"
+    },
+    "until": {
+      "type": "STRING",
+      "value": "until"
+    },
+    "using": {
+      "type": "STRING",
+      "value": "using"
+    },
+    "var": {
+      "type": "STRING",
+      "value": "var"
+    },
+    "while": {
+      "type": "STRING",
+      "value": "while"
+    },
+    "workflow": {
+      "type": "STRING",
+      "value": "workflow"
+    },
+    "comment": {
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "#"
+              },
+              {
+                "type": "PATTERN",
+                "value": ".*"
+              }
+            ]
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "<#"
+              },
+              {
+                "type": "PATTERN",
+                "value": ".*"
+              },
+              {
+                "type": "STRING",
+                "value": "#>"
+              }
+            ]
+          }
+        ]
+      }
     }
   },
   "extras": [
     {
       "type": "PATTERN",
       "value": "\\s"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "comment"
     }
   ],
   "conflicts": [],
