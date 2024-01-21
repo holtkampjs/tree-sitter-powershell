@@ -15,7 +15,7 @@ module.exports = grammar({
       $.keyword,
       $.variable,
       $.command,
-      // command-parameter
+      $.command_parameter,
       // command-argument-token
       // integer-literal
       // real-literal
@@ -154,6 +154,64 @@ module.exports = grammar({
     _generic_token_with_subexpr_start: $ => seq(
       repeat1($._generic_token_part),
       '$(',
+    ),
+
+    /*
+    * command-parameter:
+    *     dash first-parameter-char parameter-chars colon~opt~
+    * 
+    * first-parameter-char:
+    *     A Unicode character of classes Lu, Ll, Lt, Lm, or Lo
+    *     _ (The underscore character U+005F)
+    *     ?
+    * 
+    * parameter-chars:
+    *     parameter-char
+    *     parameter-chars parameter-char
+    * 
+    * parameter-char:
+    *     Any Unicode character except
+    *         { } ( ) ; , \| & . [
+    *         colon
+    *         whitespace
+    *         new-line-character
+    * 
+    * colon:
+    *     : (The colon character U+003A)
+    * 
+    * // TODO: Continue
+    * verbatim-command-argument-chars:
+    *     verbatim-command-argument-part
+    *     verbatim-command-argument-chars verbatim-command-argument-part
+    * 
+    * verbatim-command-argument-part:
+    *     verbatim-command-string
+    *     & non-ampersand-character
+    *     Any Unicode character except
+    *         |
+    *         new-line-character
+    * 
+    * non-ampersand-character:
+    *     Any Unicode character except &
+    * 
+    * verbatim-command-string:
+    *     double-quote-character non-double-quote-chars
+    *     double-quote-character
+    * 
+    * non-double-quote-chars:
+    *     non-double-quote-char
+    *     non-double-quote-chars non-double-quote-char
+    * 
+    * non-double-quote-char:
+    *     Any Unicode character except
+    *         double-quote-character
+    */
+
+    common_parameter: _ => seq(
+      '-',
+      /[A-Za-z_\?]/,
+      /[^\{\}\(\)\;\,\|\&\.\[\:\s]*/,
+      optional(':'),
     ),
 
     // TODO: Implement tests
