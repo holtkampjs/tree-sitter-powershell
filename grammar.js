@@ -2,168 +2,392 @@ module.exports = grammar({
   name: 'powershell',
 
   extras: $ => [
-    /\s/,
-    $.comment
+    $._whitespace,
+    $._comment,
   ],
 
   supertypes: _ => [],
 
   rules: {
-    source_file: $ => seq($._token),
+    /*
+    * ==============
+    * 2.2.1 Scripts
+    * ==============
+    */
 
+    /*
+    * input:
+    *     input-elements~opt~   signature-block~opt~
+    * 
+    * RENAME: input -> source_file
+    */
+    _source_file: $ => seq(
+      optional($._input_elements),
+      optional($._signature_block),
+    ),
+
+    /*
+    * input-elements:
+    *     input-element
+    *     input-elements   input-element
+    */
+    _input_elements: $ => repeat1($._input_element),
+
+    /*
+    * input-element:
+    *     whitespace
+    *     comment
+    *     token
+    */
+    _input_element: $ => choice(
+      $._whitespace,
+      $._comment,
+      $._token,
+    ),
+
+    /*
+    * signature-block:
+    *     signature-begin   signature   signature-end
+    */
+    _signature_block: $ => seq(
+      $._signature_begin,
+      $._signature,
+      $._signature_end,
+    ),
+
+    /*
+    * signature-begin:
+    *     new-line-character   # SIG # Begin signature block   new-line-character
+    */
+    _signature_begin: $ => seq(
+      $._new_line_character,
+      '# SIG # Begin signature block',
+      $._new_line_character,
+    ),
+
+    /*
+    * signature:
+    *     base64 encoded signature blob in multiple single-line-comments
+    */
+    _signature: _ => repeat1(seq('#', /[A-Za-z0-9+/=]+/)),
+
+    /*
+    * signature-end:
+    *     new-line-character   # SIG # End signature block   new-line-character
+    */
+    _signature_end: $ => seq(
+      $._new_line_character,
+      '# SIG # End signature block',
+      $._new_line_character,
+    ),
+
+    /*
+    * =======================
+    * 2.2.2 Line terminators
+    * =======================
+    */
+
+    /*
+    * new-line-character:
+    *     Carriage return character (U+000D)
+    *     Line feed character (U+000A)
+    *     Carriage return character (U+000D) followed by line feed character (U+000A)
+    */
+    _new_line_character: _ => choice(
+      /\u000D/,
+      /\u000A/,
+      /\u000D\u000A/, // TODO: replace with seq()? possibly prec()?
+    ),
+
+    /*
+    * new-lines:
+    *     new-line-character
+    *     new-lines new-line-character
+    */
+    _new_lines: $ => repeat1($._new_line_character),
+
+    /*
+    * ===============
+    * 2.2.3 Comments
+    * ===============
+    */
+
+    /*
+    * comment:
+    *     single-line-comment
+    *     requires-comment
+    *     delimited-comment
+    */
+    _comment: $ => choice(
+      $._single_line_comment,
+      $._requires_comment,
+      $._delimited_comment,
+    ),
+
+    /*
+    * single-line-comment:
+    *     # input-characters~opt~
+    */
+    _single_line_comment: $ => seq(
+      '#',
+      optional($._input_characters),
+    ),
+
+    /*
+    * input-characters:
+    *     input-character
+    *     input-characters input-character
+    */
+    _input_characters: $ => repeat1($._input_character),
+
+    /*
+    * input-character:
+    *     Any Unicode character except a new-line-character
+    */
+    _input_character: _ => /[^\u000A\u000D]/,
+
+    /*
+    * requires-comment:
+    *     #requires whitespace command-arguments
+    */
+    _requires_comment: $ => seq(
+      '#requires',
+      $._whitespace,
+      $._command_arguments,
+    ),
+
+    /*
+    * dash:
+    *     - (U+002D)
+    *     EnDash character (U+2013)
+    *     EmDash character (U+2014)
+    *     Horizontal bar character (U+2015)
+    */
+    _dash: _ => /[\u002D\u2013\u2014\u2015]/,
+
+    /*
+    * dashdash:
+    *     dash dash
+    */
+    _dashdash: $ => seq($._dash, $._dash),
+
+    /*
+    * delimited-comment:
+    *     < # delimited-comment-text~opt~ hashes >
+    */
+    _delimited_comment: $ => seq(
+      '<',
+      '#',
+      optional($._delimited_comment_text),
+      $._hashes,
+      '>'
+    ),
+
+    /*
+    * delimited-comment-text:
+    *     delimited-comment-section
+    *     delimited-comment-text delimited-comment-section
+    */
+    _delimited_comment_text: $ => choice(
+      $._delimited_comment_section,
+      seq($._delimited_comment_text, $._delimited_comment_section),
+    ),
+
+    /*
+    * delimited-comment-section:
+    *     >
+    *     hashes~opt~  not-greater-than-or-hash
+    */
+    _delimited_comment_section: $ => choice(
+      '>',
+      seq(optional($._hashes), $._not_greater_than_or_hash),
+    ),
+
+    /*
+    * hashes:
+    *     #
+    *     hashes #
+    */
+    _hashes: _ => /#+/,
+
+    /*
+    * not-greater-than-or-hash:
+    *     Any Unicode character except > or #
+    */
+    _not_greater_than_or_hash: _ => /[^>#]/,
+
+    /*
+    * =================
+    * 2.2.4 Whitespace
+    * =================
+    */
+
+    /*
+    * whitespace:
+    *     Any character with Unicode class Zs, Zl, or Zp
+    *     Horizontal tab character (U+0009)
+    *     Vertical tab character (U+000B)
+    *     Form feed character (U+000C)
+    *     ` (The backtick character U+0060) followed by new-line-character
+    */
+    _whitespace: $ => choice(
+      /[\p{Zs}\p{Zl}\p{Zp}\u0009\u000B\u000C]/,
+      seq(/\u0060/, $._new_line_character),
+    ),
+
+    /*
+    * ===========
+    * 2.3 Tokens
+    * ===========
+    *
+    * token:
+    *     keyword
+    *     variable
+    *     command
+    *     command-parameter
+    *     command-argument-token
+    *     integer-literal
+    *     real-literal
+    *     string-literal
+    *     type-literal
+    *     operator-or-punctuator
+    */
     _token: $ => choice(
       $.keyword,
       $.variable,
       $.command,
-      // command-parameter
-      // command-argument-token
-      // integer-literal
-      // real-literal
-      // string-literal
-      // type-literal
-      // operator-or-punctuator
+      $.command_parameter,
+      $.command_argument_token,
+      $.integer_literal,
+      $.real_literal,
+      $.string_literal,
+      $.type_literal,
+      $.operator_or_punctuator,
     ),
 
-    keyword: $ => choice(
-      $.begin,
-      $.break,
-      $.catch,
-      $.class,
-      $.continue,
-      $.data,
-      $.define,
-      $.do,
-      $.dynamicparam,
-      $.else,
-      $.elseif,
-      $.end,
-      $.exit,
-      $.filter,
-      $.finally,
-      $.for,
-      $.foreach,
-      $.from,
-      $.function,
-      $.if,
-      $.in,
-      $.inlinescript,
-      $.parallel,
-      $.param,
-      $.process,
-      $.return,
-      $.switch,
-      $.throw,
-      $.trap,
-      $.try,
-      $.until,
-      $.using,
-      $.var,
-      $.while,
-      $.workflow,
-    ),
+    /*
+    * ===============
+    * 2.3.1 Keywords
+    * ===============
+    */
 
-    begin: _ => 'begin',
-    break: _ => 'break',
-    catch: _ => 'catch',
-    class: _ => 'class',
-    continue: _ => 'continue',
-    data: _ => 'data',
-    define: _ => 'define',
-    do: _ => 'do',
-    dynamicparam: _ => 'dynamicparam',
-    else: _ => 'else',
-    elseif: _ => 'elseif',
-    end: _ => 'end',
-    exit: _ => 'exit',
-    filter: _ => 'filter',
-    finally: _ => 'finally',
-    for: _ => 'for',
-    foreach: _ => 'foreach',
-    from: _ => 'from',
-    function: _ => 'function',
-    if: _ => 'if',
-    in: _ => 'in',
-    inlinescript: _ => 'inlinescript',
-    parallel: _ => 'parallel',
-    param: _ => 'param',
-    process: _ => 'process',
-    return: _ => 'return',
-    switch: _ => 'switch',
-    throw: _ => 'throw',
-    trap: _ => 'trap',
-    try: _ => 'try',
-    until: _ => 'until',
-    using: _ => 'using',
-    var: _ => 'var',
-    while: _ => 'while',
-    workflow: _ => 'workflow',
-
-    variable: $ => choice(
-      seq(
-        '$',
-        choice(
-          '$',
-          '?',
-          '^',
-          seq(
-            optional($._variable_scope),
-            $.identifier
-          ),
-          seq(
-            '{',
-            optional($._variable_scope),
-            $.identifier,
-            '}'
-          ),
-        ),
-      ),
-      seq(
-        '@',
-        optional($._variable_scope),
-        $.identifier
-      ),
-    ),
-
-    // Valid characters to match variable names
-    identifier: _ => /[A-Za-z0-9_\?]+/,
-
-    // Valid characters for braced variable names
-    braced_identifier: _ => /[^\}`]+/,
-
-    _variable_scope: $ => seq($.scope, ':'),
-
-    scope: _ => choice(
-      'global',
-      'local',
-      'private',
-      'script',
+    /*
+    * keyword: one of
+    *     begin          break          catch       class
+    *     continue       data           define      do
+    *     dynamicparam   else           elseif      end
+    *     exit           filter         finally     for
+    *     foreach        from           function    if
+    *     in             inlinescript   parallel    param
+    *     process        return         switch      throw
+    *     trap           try            until       using
+    *     var            while          workflow
+    */
+    keyword: _ => choice(
+      'begin',
+      'break',
+      'catch',
+      'class',
+      'continue',
+      'data',
+      'define',
+      'do',
+      'dynamicparam',
+      'else',
+      'elseif',
+      'end',
+      'exit',
+      'filter',
+      'finally',
+      'for',
+      'foreach',
+      'from',
+      'function',
+      'if',
+      'in',
+      'inlinescript',
+      'parallel',
+      'param',
+      'process',
+      'return',
+      'switch',
+      'throw',
+      'trap',
+      'try',
+      'until',
       'using',
+      'var',
+      'while',
       'workflow',
-      /[A-Za-z0-9_\?]+/,
     ),
 
-    // TODO: Implement tests
-    command: $ => $._generic_token,
-    _generic_token: $ => repeat1($._generic_token_part),
-    _generic_token_part: $ => choice(
-      // TODO: expandable-string-literal
-      // TODO: verbatim-here-string-literal
-      $.variable,
-      /[^\{\}\(\)\;\,\|\&\$\`\"\']/,
-    ),
-    _generic_token_with_subexpr_start: $ => seq(
-      repeat1($._generic_token_part),
-      '$(',
-    ),
+    /*
+    * ===============
+    * 2.3.1 Keywords
+    * ===============
+    */
 
-    // TODO: Implement tests
-    comment: _ => token(choice(
-      seq('#', /.*/),
-      seq(
-        '<#',
-        /.*/,
-        '#>',
-      ),
-    )),
+    /*
+    * variable:
+    *     $$
+    *     $?
+    *     $^
+    *     $   variable-scope~opt~  variable-characters
+    *     @   variable-scope~opt~  variable-characters
+    *     braced-variable
+    */
+
+    /*
+    * braced-variable:
+    *     ${   variable-scope~opt~   braced-variable-characters   }
+    */
+
+    /*
+    * variable-scope:
+    *     global:
+    *     local:
+    *     private:
+    *     script:
+    *     using:
+    *     workflow:
+    *     variable-namespace
+    */
+
+    /*
+    * variable-namespace:
+    *     variable-characters   :
+    */
+
+    /*
+    * variable-characters:
+    *     variable-character
+    *     variable-characters   variable-character
+    */
+
+    /*
+    * variable-character:
+    *     A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nd
+    *     _   (The underscore character U+005F)
+    *     ?
+    */
+
+    /*
+    * braced-variable-characters:
+    *     braced-variable-character
+    *     braced-variable-characters   braced-variable-character
+    */
+
+    /*
+    * braced-variable-character:
+    *     Any Unicode character except
+    *         }   (The closing curly brace character U+007D)
+    *         `   (The backtick character U+0060)
+    *     escaped-character
+    */
+
+    /*
+    * escaped-character:
+    *     `   (The backtick character U+0060) followed by any Unicode character
+    */
   }
 });
