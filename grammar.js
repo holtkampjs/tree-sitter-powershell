@@ -284,41 +284,41 @@ module.exports = grammar({
     *     var            while          workflow
     */
     keyword: _ => choice(
-      'begin',
-      'break',
-      'catch',
-      'class',
-      'continue',
-      'data',
-      'define',
-      'do',
-      'dynamicparam',
-      'else',
-      'elseif',
-      'end',
-      'exit',
-      'filter',
-      'finally',
-      'for',
-      'foreach',
-      'from',
-      'function',
-      'if',
-      'in',
-      'inlinescript',
-      'parallel',
-      'param',
-      'process',
-      'return',
-      'switch',
-      'throw',
-      'trap',
-      'try',
-      'until',
-      'using',
-      'var',
-      'while',
-      'workflow',
+      /begin/i,
+      /break/i,
+      /catch/i,
+      /class/i,
+      /continue/i,
+      /data/i,
+      /define/i,
+      /do/i,
+      /dynamicparam/i,
+      /else/i,
+      /elseif/i,
+      /end/i,
+      /exit/i,
+      /filter/i,
+      /finally/i,
+      /for/i,
+      /foreach/i,
+      /from/i,
+      /function/i,
+      /if/i,
+      /in/i,
+      /inlinescript/i,
+      /parallel/i,
+      /param/i,
+      /process/i,
+      /return/i,
+      /switch/i,
+      /throw/i,
+      /trap/i,
+      /try/i,
+      /until/i,
+      /using/i,
+      /var/i,
+      /while/i,
+      /workflow/i,
     ),
 
     /*
@@ -336,11 +336,33 @@ module.exports = grammar({
     *     @   variable-scope~opt~  variable-characters
     *     braced-variable
     */
+    variable: $ => choice(
+      '$$',
+      '$?',
+      '$^',
+      seq(
+        '$',
+        optional($._variable_scope),
+        $._variable_characters,
+      )
+      seq(
+        '@',
+        optional($._variable_scope),
+        $._variable_characters,
+      ),
+      $._braced_variable
+    ),
 
     /*
     * braced-variable:
     *     ${   variable-scope~opt~   braced-variable-characters   }
     */
+    _braced_variable: $ => seq(
+      '${',
+      optional($._variable_scope),
+      $._braced_variable_characters,
+      '}',
+    ),
 
     /*
     * variable-scope:
@@ -352,17 +374,31 @@ module.exports = grammar({
     *     workflow:
     *     variable-namespace
     */
+    _variable_scope: $ => choice(
+      /global:/i,
+      /local:/i,
+      /private:/i,
+      /script:/i,
+      /using:/i,
+      /workflow:/i,
+      $._variable_namespace,
+    ),
 
     /*
     * variable-namespace:
     *     variable-characters   :
     */
+    _variable_namespace: $ => seq(
+      $._variable_characters,
+      ':',
+    ),
 
     /*
     * variable-characters:
     *     variable-character
     *     variable-characters   variable-character
     */
+    _variable_characters: $ => repeat1($._variable_character)
 
     /*
     * variable-character:
@@ -370,12 +406,14 @@ module.exports = grammar({
     *     _   (The underscore character U+005F)
     *     ?
     */
+    _variable_character: _ => /[\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nd}\u005F?]/,
 
     /*
     * braced-variable-characters:
     *     braced-variable-character
     *     braced-variable-characters   braced-variable-character
     */
+    _braced_variable_characters: $ => repeat1($._braced_variable_character),
 
     /*
     * braced-variable-character:
@@ -384,10 +422,15 @@ module.exports = grammar({
     *         `   (The backtick character U+0060)
     *     escaped-character
     */
+    _braced_variable_character: $ => choice(
+      /[^\u007D\u0060]/,
+      $._escaped_character,
+    ),
 
     /*
     * escaped-character:
     *     `   (The backtick character U+0060) followed by any Unicode character
     */
+    _escaped_character: _ => /\u0060./,
   }
 });
